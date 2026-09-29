@@ -1,0 +1,70 @@
+{% extends "basis.html" %}
+{% set l = leitung %}
+{% block ueberschrift %}{{ l.bezeichnung }}{% endblock %}
+{% block aktionen %}
+  <a class="btn btn-outline-secondary" href="/leitungen">Zurueck</a>
+  <a class="btn btn-primary" href="/leitungen/{{ l.id }}/bearbeiten">Bearbeiten</a>
+{% endblock %}
+
+{% macro zeile(bezeichnung, wert) %}
+  <tr><th class="w-50 fw-normal text-muted">{{ bezeichnung }}</th><td>{{ wert if wert not in (None, '') else "-" }}</td></tr>
+{% endmacro %}
+
+{% block inhalt %}
+<div class="mb-3">
+  <span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span>
+  <span class="badge text-bg-secondary">{{ l.art.value }}</span>
+  <span class="badge text-bg-light text-dark">{{ l.technologie.value }}</span>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Zuordnung</div>
+      <table class="table table-sm mb-0">
+        {{ zeile("Provider", l.provider.name if l.provider else None) }}
+        {{ zeile("Standort A", l.standort_a.name if l.standort_a else None) }}
+        {{ zeile("Standort B", l.standort_b.name if l.standort_b else None) }}
+        {{ zeile("Aus Anfrage", ("#" ~ l.anfrage.id ~ " " ~ l.anfrage.titel) if l.anfrage else None) }}
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Technik</div>
+      <table class="table table-sm mb-0">
+        {{ zeile("Bandbreite", l.bandbreite_text) }}
+        {{ zeile("Sprachkanaele", l.sprachkanaele) }}
+        {{ zeile("Rufnummernblock", l.rufnummernblock) }}
+        {{ zeile("Circuit-ID", l.circuit_id) }}
+        {{ zeile("Anschlusskennung", l.anschlusskennung) }}
+        {{ zeile("Transfernetz", l.ip_transfernetz) }}
+        {{ zeile("LAN-Netz", l.ip_lan_netz) }}
+        {{ zeile("Router / Endgeraet", l.router_typ) }}
+        {{ zeile("SLA", l.sla) }}
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Vertrag</div>
+      <table class="table table-sm mb-0">
+        {{ zeile("Vertragsnummer", l.vertragsnummer) }}
+        {{ zeile("Kosten monatlich", l.kosten_monatlich | euro) }}
+        {{ zeile("Kosten einmalig", l.kosten_einmalig | euro) }}
+        {{ zeile("Vertragsbeginn", l.vertragsbeginn | datum) }}
+        {{ zeile("Vertragsende", l.vertragsende | datum) }}
+        {{ zeile("Kuendigungsfrist", (l.kuendigungsfrist_monate ~ " Monate") if l.kuendigungsfrist_monate else None) }}
+        {{ zeile("Verlaengerung", (l.verlaengerung_monate ~ " Monate") if l.verlaengerung_monate else None) }}
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if l.notizen %}
+<div class="card shadow-sm mt-3">
+  <div class="card-header">Notizen</div>
+  <div class="card-body"><pre class="anschreiben mb-0">{{ l.notizen }}</pre></div>
+</div>
+{% endif %}
+{% endblock %}

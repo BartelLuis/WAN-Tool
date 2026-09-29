@@ -1,0 +1,50 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}{{ "Standort bearbeiten" if standort else "Neuer Standort" }}{% endblock %}
+
+{% block inhalt %}
+<form method="post" action="/standorte/speichern" class="card shadow-sm">
+  <input type="hidden" name="standort_id" value="{{ standort.id if standort else '' }}">
+  <div class="card-body row g-3">
+    <div class="col-md-8">
+      <label class="form-label">Name *</label>
+      <input class="form-control" name="name" required value="{{ standort.name if standort else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Kurzzeichen</label>
+      <input class="form-control" name="kurzzeichen" value="{{ standort.kurzzeichen or '' if standort else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Strasse / Nr.</label>
+      <input class="form-control" name="strasse" value="{{ standort.strasse or '' if standort else '' }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">PLZ</label>
+      <input class="form-control" name="plz" value="{{ standort.plz or '' if standort else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Ort</label>
+      <input class="form-control" name="ort" value="{{ standort.ort or '' if standort else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Land</label>
+      <input class="form-control" name="land" value="{{ standort.land if standort else 'Deutschland' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Ansprechpartner</label>
+      <input class="form-control" name="ansprechpartner" value="{{ standort.ansprechpartner or '' if standort else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Telefon</label>
+      <input class="form-control" name="telefon" value="{{ standort.telefon or '' if standort else '' }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notizen</label>
+      <textarea class="form-control" name="notizen" rows="3">{{ standort.notizen or '' if standort else '' }}</textarea>
+    </div>
+  </div>
+  <div class="card-footer d-flex gap-2">
+    <button class="btn btn-primary">Speichern</button>
+    <a class="btn btn-outline-secondary" href="/standorte">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

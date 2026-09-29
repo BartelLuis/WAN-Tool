@@ -1,0 +1,92 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Dashboard{% endblock %}
+{% block aktionen %}
+  <a class="btn btn-primary" href="/anfragen/neu">Neue Angebotsanfrage</a>
+{% endblock %}
+
+{% block inhalt %}
+<div class="row g-3 mb-4">
+  {% set kacheln = [
+    ("Leitungen", kennzahlen.leitungen, "/leitungen"),
+    ("davon aktiv", kennzahlen.aktiv, "/leitungen?status=aktiv"),
+    ("Offene Anfragen", kennzahlen.offene_anfragen, "/anfragen"),
+    ("Standorte", kennzahlen.standorte, "/standorte"),
+    ("Provider", kennzahlen.provider, "/provider"),
+  ] %}
+  {% for titel, wert, ziel in kacheln %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <a class="text-decoration-none" href="{{ ziel }}">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">{{ titel }}</div>
+          <div class="kennzahl">{{ wert }}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <div class="text-muted small">Monatskosten aktiv</div>
+        <div class="kennzahl">{{ kennzahlen.kosten | euro }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Vertragsenden in den naechsten 120 Tagen</div>
+      <div class="table-responsive">
+        <table class="table table-sm tabelle-kompakt mb-0">
+          <thead><tr><th>Leitung</th><th>Provider</th><th>Vertragsende</th><th>Frist</th></tr></thead>
+          <tbody>
+          {% for leitung in auslaufend %}
+            <tr>
+              <td><a href="/leitungen/{{ leitung.id }}">{{ leitung.bezeichnung }}</a></td>
+              <td>{{ leitung.provider.name if leitung.provider else "-" }}</td>
+              <td>{{ leitung.vertragsende | datum }}</td>
+              <td>{{ leitung.kuendigungsfrist_monate or "-" }} Mon.</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-muted">Keine auslaufenden Vertraege.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">Leitungen nach Status</div>
+      <ul class="list-group list-group-flush">
+        {% for status, anzahl in nach_status %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="badge text-bg-{{ status_farbe(status) }}">{{ status.value }}</span>
+          <strong>{{ anzahl }}</strong>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">Noch keine Leitungen erfasst.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header">Letzte Angebotsanfragen</div>
+      <ul class="list-group list-group-flush">
+        {% for anfrage in letzte_anfragen %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="/anfragen/{{ anfrage.id }}">{{ anfrage.titel }}</a>
+          <span class="badge text-bg-{{ status_farbe(anfrage.status) }}">{{ anfrage.status.value }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">Noch keine Anfragen.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

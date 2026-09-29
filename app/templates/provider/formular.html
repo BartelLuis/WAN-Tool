@@ -1,0 +1,46 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}{{ "Provider bearbeiten" if eintrag else "Neuer Provider" }}{% endblock %}
+
+{% block inhalt %}
+<form method="post" action="/provider/speichern" class="card shadow-sm">
+  <input type="hidden" name="provider_id" value="{{ eintrag.id if eintrag else '' }}">
+  <div class="card-body row g-3">
+    <div class="col-md-8">
+      <label class="form-label">Name *</label>
+      <input class="form-control" name="name" required value="{{ eintrag.name if eintrag else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Kundennummer</label>
+      <input class="form-control" name="kundennummer" value="{{ eintrag.kundennummer or '' if eintrag else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Ansprechpartner</label>
+      <input class="form-control" name="ansprechpartner" value="{{ eintrag.ansprechpartner or '' if eintrag else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">E-Mail</label>
+      <input class="form-control" type="email" name="email" value="{{ eintrag.email or '' if eintrag else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Telefon</label>
+      <input class="form-control" name="telefon" value="{{ eintrag.telefon or '' if eintrag else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Webseite</label>
+      <input class="form-control" name="webseite" value="{{ eintrag.webseite or '' if eintrag else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Stoerungshotline</label>
+      <input class="form-control" name="stoerungshotline" value="{{ eintrag.stoerungshotline or '' if eintrag else '' }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">Notizen</label>
+      <textarea class="form-control" name="notizen" rows="3">{{ eintrag.notizen or '' if eintrag else '' }}</textarea>
+    </div>
+  </div>
+  <div class="card-footer d-flex gap-2">
+    <button class="btn btn-primary">Speichern</button>
+    <a class="btn btn-outline-secondary" href="/provider">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

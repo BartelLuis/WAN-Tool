@@ -1,0 +1,133 @@
+{% extends "basis.html" %}
+{% set a = anfrage %}
+{% block ueberschrift %}Anfrage #{{ a.id }} &ndash; {{ a.titel }}{% endblock %}
+{% block aktionen %}
+  <a class="btn btn-outline-secondary" href="/anfragen">Zurueck</a>
+  <a class="btn btn-primary" href="/anfragen/{{ a.id }}/bearbeiten">Bearbeiten</a>
+{% endblock %}
+
+{% block inhalt %}
+<div class="mb-3">
+  <span class="badge text-bg-{{ status_farbe(a.status) }}">{{ a.status.value }}</span>
+  <span class="badge text-bg-secondary">{{ a.art.value }}</span>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Bedarf</div>
+      <table class="table table-sm mb-0">
+        <tr><th class="fw-normal text-muted">Standort A</th><td>{{ a.standort_a.name if a.standort_a else "-" }}</td></tr>
+        <tr><th class="fw-normal text-muted">Standort B</th><td>{{ a.standort_b.name if a.standort_b else "-" }}</td></tr>
+        <tr><th class="fw-normal text-muted">Technologie</th><td>{{ a.wunsch_technologie.value if a.wunsch_technologie else "-" }}</td></tr>
+        <tr><th class="fw-normal text-muted">Bandbreite</th><td>{{ a.wunsch_down_mbit or 0 }} / {{ a.wunsch_up_mbit or 0 }} Mbit/s</td></tr>
+        <tr><th class="fw-normal text-muted">Sprachkanaele</th><td>{{ a.wunsch_sprachkanaele or "-" }}</td></tr>
+        <tr><th class="fw-normal text-muted">Laufzeit</th><td>{{ a.wunsch_laufzeit_monate or "-" }}</td></tr>
+        <tr><th class="fw-normal text-muted">Wunschtermin</th><td>{{ a.wunsch_termin | datum }}</td></tr>
+        <tr><th class="fw-normal text-muted">Abgabefrist</th><td>{{ a.abgabefrist | datum }}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Anschreiben (kopierfertig)</span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('anschreiben').innerText)">Kopieren</button>
+      </div>
+      <div class="card-body">
+        <pre class="anschreiben mb-0" id="anschreiben">{{ anschreiben }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Angefragte Provider &amp; Angebote</span>
+    {% if a.angebote %}
+    <button class="btn btn-sm btn-outline-primary" form="versenden-formular">Als versendet markieren</button>
+    {% endif %}
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover tabelle-kompakt mb-0">
+      <thead>
+        <tr>
+          <th>Provider</th><th>Status</th><th>Angebotsnr.</th><th>Technologie</th><th>Bandbreite</th>
+          <th class="text-end">mtl.</th><th class="text-end">einmalig</th><th>Laufzeit</th>
+          <th class="text-end">Gesamt</th><th>Bereitstellung</th><th>Gueltig bis</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for ang in a.angebote %}
+        <tr class="{{ 'table-success' if bestes_angebot and ang.id == bestes_angebot.id }}">
+          <td>
+            {{ ang.provider.name }}
+            {% if ang.provider.email %}
+            <a class="ms-1" href="mailto:{{ ang.provider.email }}?subject={{ ('Angebotsanfrage: ' ~ a.titel) | urlencode }}" title="E-Mail an Provider">&#9993;</a>
+            {% endif %}
+          </td>
+          <td><span class="badge text-bg-{{ status_farbe(ang.status) }}">{{ ang.status.value }}</span></td>
+          <td>{{ ang.angebotsnummer or "-" }}</td>
+          <td>{{ ang.technologie.value if ang.technologie else "-" }}</td>
+          <td>{{ ang.bandbreite_down_mbit or 0 }} / {{ ang.bandbreite_up_mbit or 0 }}</td>
+          <td class="text-end">{{ ang.kosten_monatlich | euro }}</td>
+          <td class="text-end">{{ ang.kosten_einmalig | euro }}</td>
+          <td>{{ ang.laufzeit_monate or "-" }}</td>
+          <td class="text-end">{{ ang.tco | euro }}</td>
+          <td>{{ ang.bereitstellung_wochen or "-" }} Wo.</td>
+          <td>{{ ang.gueltig_bis | datum }}</td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary" href="/anfragen/{{ a.id }}/angebote/{{ ang.id }}">Erfassen</a>
+            {% if ang.status.value not in ("beauftragt",) %}
+            <button class="btn btn-sm btn-outline-success" form="beauftragen-{{ ang.id }}"
+                    onclick="return confirm('Angebot beauftragen? Es wird eine Leitung angelegt.');">Beauftragen</button>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="12" class="text-muted">Noch kein Provider zugeordnet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if offene_provider %}
+  <div class="card-body border-top">
+    <form method="post" action="/anfragen/{{ a.id }}/provider-hinzufuegen" class="row g-2 align-items-end">
+      <div class="col-md-8">
+        <label class="form-label">Provider zur Anfrage hinzufuegen (Mehrfachauswahl mit Strg)</label>
+        <select class="form-select" name="provider_ids" multiple size="5">
+          {% for p in offene_provider %}
+          <option value="{{ p.id }}">{{ p.name }}{% if p.ansprechpartner %} &ndash; {{ p.ansprechpartner }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3"><button class="btn btn-primary">Hinzufuegen</button></div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% if a.leitungen %}
+<div class="card shadow-sm mb-3">
+  <div class="card-header">Aus dieser Anfrage entstandene Leitungen</div>
+  <ul class="list-group list-group-flush">
+    {% for l in a.leitungen %}
+    <li class="list-group-item"><a href="/leitungen/{{ l.id }}">{{ l.bezeichnung }}</a>
+      <span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if a.notizen %}
+<div class="card shadow-sm">
+  <div class="card-header">Interne Notizen</div>
+  <div class="card-body"><pre class="anschreiben mb-0">{{ a.notizen }}</pre></div>
+</div>
+{% endif %}
+
+<form id="versenden-formular" method="post" action="/anfragen/{{ a.id }}/versenden"></form>
+{% for ang in a.angebote %}
+<form id="beauftragen-{{ ang.id }}" method="post" action="/anfragen/{{ a.id }}/angebote/{{ ang.id }}/beauftragen"></form>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Angebotsanfragen{% endblock %}
+{% block aktionen %}<a class="btn btn-primary" href="/anfragen/neu">Neue Anfrage</a>{% endblock %}
+
+{% block inhalt %}
+<form class="card card-body shadow-sm mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label">Status</label>
+      <select class="form-select" name="status">
+        <option value="">alle</option>
+        {% for s in AnfrageStatus %}
+        <option value="{{ s.value }}" {{ 'selected' if filter.status == s.value }}>{{ s.value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary">Filtern</button></div>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover tabelle-kompakt mb-0">
+      <thead>
+        <tr><th>#</th><th>Titel</th><th>Art</th><th>Standorte</th><th>Wunsch</th>
+            <th>Abgabefrist</th><th>Angebote</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+      {% for a in anfragen %}
+        <tr>
+          <td>{{ a.id }}</td>
+          <td><a href="/anfragen/{{ a.id }}">{{ a.titel }}</a></td>
+          <td>{{ a.art.value }}</td>
+          <td>
+            {{ a.standort_a.name if a.standort_a else "-" }}
+            {%- if a.standort_b %} &rarr; {{ a.standort_b.name }}{% endif %}
+          </td>
+          <td>{{ a.wunsch_down_mbit or 0 }} / {{ a.wunsch_up_mbit or 0 }} Mbit/s</td>
+          <td>{{ a.abgabefrist | datum }}</td>
+          <td>{{ a.angebote | selectattr("status.value", "equalto", "angeboten") | list | length }} / {{ a.angebote | length }}</td>
+          <td><span class="badge text-bg-{{ status_farbe(a.status) }}">{{ a.status.value }}</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="text-muted">Keine Anfragen vorhanden.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

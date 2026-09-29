@@ -1,0 +1,33 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Provider{% endblock %}
+{% block aktionen %}<a class="btn btn-primary" href="/provider/neu">Neuer Provider</a>{% endblock %}
+
+{% block inhalt %}
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover tabelle-kompakt mb-0">
+      <thead><tr><th>Name</th><th>Kundennummer</th><th>Ansprechpartner</th><th>E-Mail</th><th>Stoerungshotline</th><th></th></tr></thead>
+      <tbody>
+      {% for p in provider %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>{{ p.kundennummer or "-" }}</td>
+          <td>{{ p.ansprechpartner or "-" }}</td>
+          <td>{% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% else %}-{% endif %}</td>
+          <td>{{ p.stoerungshotline or "-" }}</td>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary" href="/provider/{{ p.id }}/bearbeiten">Bearbeiten</a>
+            <form class="d-inline" method="post" action="/provider/{{ p.id }}/loeschen"
+                  onsubmit="return confirm('Provider wirklich loeschen?');">
+              <button class="btn btn-sm btn-outline-danger">Loeschen</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="text-muted">Keine Provider erfasst.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

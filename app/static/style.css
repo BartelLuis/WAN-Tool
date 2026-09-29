@@ -1,0 +1,19 @@
+.kennzahl {
+  font-size: 1.9rem;
+  font-weight: 600;
+}
+
+.tabelle-kompakt td,
+.tabelle-kompakt th {
+  vertical-align: middle;
+  font-size: 0.92rem;
+}
+
+pre.anschreiben {
+  white-space: pre-wrap;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: .375rem;
+  padding: 1rem;
+  font-size: .9rem;
+}
