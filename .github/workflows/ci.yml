@@ -112,7 +112,7 @@ jobs:
           test "$nutzer" != "0"
 
       - name: Trivy (Image-Schwachstellen)
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.29.0
         with:
           image-ref: wan-tool:${{ github.sha }}
           format: table
