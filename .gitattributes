@@ -1,0 +1,11 @@
+# Zeilenenden im Repository einheitlich, damit Pruefsummen und Shell-Skripte
+# auch nach einem Checkout unter Windows gueltig bleiben.
+* text=auto eol=lf
+
+# Fremd-Assets unveraendert lassen: die SHA256-Pruefsumme muss exakt passen.
+app/static/vendor/** -text
+
+*.sh text eol=lf
+*.ps1 text eol=crlf
+Dockerfile text eol=lf
+*.yml text eol=lf
