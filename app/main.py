@@ -5,10 +5,10 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -45,6 +45,23 @@ app.include_router(provider.router)
 app.include_router(leitungen.router)
 app.include_router(anfragen.router)
 app.include_router(api.router)
+
+
+@app.exception_handler(IntegrityError)
+def integritaetsfehler(request: Request, exc: IntegrityError):
+    meldung = (
+        "Ein Datensatz mit diesem Namen existiert bereits."
+        if "Duplicate entry" in str(exc.orig)
+        else "Die Daten konnten nicht gespeichert werden."
+    )
+    if request.url.path.startswith("/api"):
+        return JSONResponse(status_code=409, content={"detail": meldung})
+    return templates.TemplateResponse(
+        request,
+        "fehler.html",
+        {"meldung": meldung, "details": str(exc.orig)},
+        status_code=409,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

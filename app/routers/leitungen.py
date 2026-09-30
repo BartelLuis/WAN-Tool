@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -77,8 +77,9 @@ def export(
     suche: str = "",
 ):
     leitungen = _gefiltert(db, art, status, provider_id, suche)
-    return StreamingResponse(
-        leitungen_csv(leitungen),
+    return Response(
+        # BOM, damit Excel die Umlaute korrekt erkennt
+        content=("\ufeff" + leitungen_csv(leitungen)).encode("utf-8"),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": 'attachment; filename="leitungen.csv"'},
     )

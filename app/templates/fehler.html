@@ -1,0 +1,11 @@
+{% extends "basis.html" %}
+{% block titel %}Fehler{% endblock %}
+{% block ueberschrift %}Eingabe nicht moeglich{% endblock %}
+
+{% block inhalt %}
+<div class="alert alert-warning">
+  <p class="mb-2">{{ meldung }}</p>
+  <p class="mb-0 small text-muted">{{ details }}</p>
+</div>
+<a class="btn btn-outline-secondary" href="javascript:history.back()">Zurueck zum Formular</a>
+{% endblock %}

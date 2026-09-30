@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from datetime import date
 
 from sqlalchemy.orm import Session
@@ -43,10 +43,9 @@ CSV_SPALTEN = [
 ]
 
 
-def leitungen_csv(leitungen: Iterable[Leitung]) -> Iterator[str]:
+def leitungen_csv(leitungen: Iterable[Leitung]) -> str:
     puffer = io.StringIO()
     writer = csv.writer(puffer, delimiter=";", lineterminator="\r\n")
-    yield "\ufeff"
     writer.writerow(CSV_SPALTEN)
     for leitung in leitungen:
         writer.writerow(
@@ -76,12 +75,7 @@ def leitungen_csv(leitungen: Iterable[Leitung]) -> Iterator[str]:
                 leitung.kuendigungsfrist_monate or "",
             ]
         )
-        yield puffer.getvalue()
-        puffer.seek(0)
-        puffer.truncate(0)
-    rest = puffer.getvalue()
-    if rest:
-        yield rest
+    return puffer.getvalue()
 
 
 def anfragetext(anfrage: Angebotsanfrage, angebot: Angebot | None = None) -> str:
