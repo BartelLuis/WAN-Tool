@@ -47,11 +47,15 @@ def frische_datenbank() -> Iterator[None]:
 
 @pytest.fixture
 def db() -> Iterator:
-    sitzung = SessionLocal()
+    verbindung = engine.connect()
+    if engine.dialect.name == "mysql":
+        verbindung = verbindung.execution_options(isolation_level="READ COMMITTED")
+    sitzung = SessionLocal(bind=verbindung)
     try:
         yield sitzung
     finally:
         sitzung.close()
+        verbindung.close()
 
 
 @pytest.fixture
