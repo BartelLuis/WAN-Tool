@@ -21,4 +21,5 @@ ignore = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+pythonpath = ["."]
 filterwarnings = ["error::DeprecationWarning:app.*"]
