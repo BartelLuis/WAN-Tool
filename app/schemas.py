@@ -6,10 +6,11 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict
 
 from app.models import (
-    AngebotStatus,
     AnfrageStatus,
+    AngebotStatus,
     Leitungsart,
     LeitungStatus,
+    MandantArt,
     Technologie,
 )
 
@@ -18,8 +19,18 @@ class Basis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MandantOut(Basis):
+    id: int
+    name: str
+    kennzeichen: str
+    art: MandantArt
+    uebergeordnet_id: int | None
+    aktiv: bool
+
+
 class StandortOut(Basis):
     id: int
+    mandant: MandantOut
     name: str
     kurzzeichen: str | None
     strasse: str | None
@@ -32,6 +43,7 @@ class StandortOut(Basis):
 
 class ProviderOut(Basis):
     id: int
+    mandant: MandantOut
     name: str
     kundennummer: str | None
     ansprechpartner: str | None
@@ -42,6 +54,7 @@ class ProviderOut(Basis):
 
 class LeitungOut(Basis):
     id: int
+    mandant: MandantOut
     bezeichnung: str
     art: Leitungsart
     technologie: Technologie
@@ -87,6 +100,7 @@ class AngebotOut(Basis):
 
 class AnfrageOut(Basis):
     id: int
+    mandant: MandantOut
     titel: str
     art: Leitungsart
     status: AnfrageStatus

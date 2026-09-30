@@ -5,10 +5,12 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
@@ -19,6 +21,22 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+class MandantArt(str, enum.Enum):
+    AMT = "Amt"
+    GEMEINDE = "Gemeinde"
+    STADT = "Stadt"
+    KREIS = "Kreis"
+    ZWECKVERBAND = "Zweckverband"
+    SONSTIGE = "Sonstige"
+
+
+class Rolle(str, enum.Enum):
+    LESER = "Leser"
+    BEARBEITER = "Bearbeiter"
+    MANDANT_ADMIN = "Mandant-Administrator"
+    ADMIN = "Administrator"
 
 
 class Leitungsart(str, enum.Enum):
@@ -78,11 +96,107 @@ class TimestampMixin:
     )
 
 
-class Standort(TimestampMixin, Base):
-    __tablename__ = "standorte"
+class Mandant(TimestampMixin, Base):
+    """Organisatorische Einheit, z.B. Amt, Gemeinde, Stadt oder Kreis."""
+
+    __tablename__ = "mandanten"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    name: Mapped[str] = mapped_column(String(160), unique=True)
+    kennzeichen: Mapped[str] = mapped_column(String(20), unique=True)
+    art: Mapped[MandantArt] = mapped_column(Enum(MandantArt), default=MandantArt.SONSTIGE)
+    uebergeordnet_id: Mapped[int | None] = mapped_column(
+        ForeignKey("mandanten.id", ondelete="RESTRICT")
+    )
+    uebergeordnet: Mapped[Mandant | None] = relationship(
+        remote_side="Mandant.id", back_populates="untergeordnete"
+    )
+    untergeordnete: Mapped[list[Mandant]] = relationship(
+        back_populates="uebergeordnet", order_by="Mandant.name"
+    )
+    aktiv: Mapped[bool] = mapped_column(Boolean, default=True)
+    notizen: Mapped[str | None] = mapped_column(Text)
+
+    @property
+    def anzeigename(self) -> str:
+        return f"{self.art.value} {self.name}"
+
+    def nachfahren_ids(self) -> set[int]:
+        ids = {self.id}
+        for kind in self.untergeordnete:
+            ids |= kind.nachfahren_ids()
+        return ids
+
+    def __str__(self) -> str:
+        return self.anzeigename
+
+
+class Benutzer(TimestampMixin, Base):
+    __tablename__ = "benutzer"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    benutzername: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(160))
+    email: Mapped[str | None] = mapped_column(String(200))
+    passwort_hash: Mapped[str] = mapped_column(String(255))
+    rolle: Mapped[Rolle] = mapped_column(Enum(Rolle), default=Rolle.LESER)
+
+    mandant_id: Mapped[int] = mapped_column(ForeignKey("mandanten.id", ondelete="RESTRICT"))
+    mandant: Mapped[Mandant] = relationship()
+    sieht_untergeordnete: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    aktiv: Mapped[bool] = mapped_column(Boolean, default=True)
+    passwort_aendern: Mapped[bool] = mapped_column(Boolean, default=True)
+    fehlversuche: Mapped[int] = mapped_column(Integer, default=0)
+    gesperrt_bis: Mapped[datetime | None] = mapped_column(DateTime)
+    letzter_login: Mapped[datetime | None] = mapped_column(DateTime)
+    passwort_geaendert_am: Mapped[datetime | None] = mapped_column(DateTime)
+
+    @property
+    def ist_admin(self) -> bool:
+        return self.rolle == Rolle.ADMIN
+
+    @property
+    def darf_schreiben(self) -> bool:
+        return self.rolle != Rolle.LESER
+
+    @property
+    def darf_verwalten(self) -> bool:
+        return self.rolle in (Rolle.ADMIN, Rolle.MANDANT_ADMIN)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class AuditEintrag(Base):
+    """Protokoll aendernder Zugriffe; wird nie ueber die Oberflaeche geaendert."""
+
+    __tablename__ = "audit_log"
+    __table_args__ = (Index("ix_audit_zeitpunkt_mandant", "zeitpunkt", "mandant_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    zeitpunkt: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+    benutzername: Mapped[str] = mapped_column(String(80))
+    mandant_id: Mapped[int | None] = mapped_column(Integer)
+    mandant_name: Mapped[str | None] = mapped_column(String(160))
+    aktion: Mapped[str] = mapped_column(String(40))
+    objekt_typ: Mapped[str] = mapped_column(String(40))
+    objekt_id: Mapped[int | None] = mapped_column(Integer)
+    beschreibung: Mapped[str | None] = mapped_column(String(500))
+    ip: Mapped[str | None] = mapped_column(String(64))
+
+
+class Standort(TimestampMixin, Base):
+    __tablename__ = "standorte"
+    __table_args__ = (UniqueConstraint("mandant_id", "name", name="uq_standort_mandant_name"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mandant_id: Mapped[int] = mapped_column(
+        ForeignKey("mandanten.id", ondelete="RESTRICT"), index=True
+    )
+    mandant: Mapped[Mandant] = relationship()
+
+    name: Mapped[str] = mapped_column(String(120))
     kurzzeichen: Mapped[str | None] = mapped_column(String(20))
     strasse: Mapped[str | None] = mapped_column(String(160))
     plz: Mapped[str | None] = mapped_column(String(10))
@@ -103,9 +217,15 @@ class Standort(TimestampMixin, Base):
 
 class Provider(TimestampMixin, Base):
     __tablename__ = "provider"
+    __table_args__ = (UniqueConstraint("mandant_id", "name", name="uq_provider_mandant_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True)
+    mandant_id: Mapped[int] = mapped_column(
+        ForeignKey("mandanten.id", ondelete="RESTRICT"), index=True
+    )
+    mandant: Mapped[Mandant] = relationship()
+
+    name: Mapped[str] = mapped_column(String(120))
     kundennummer: Mapped[str | None] = mapped_column(String(60))
     ansprechpartner: Mapped[str | None] = mapped_column(String(120))
     email: Mapped[str | None] = mapped_column(String(160))
@@ -122,6 +242,11 @@ class Leitung(TimestampMixin, Base):
     __tablename__ = "leitungen"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mandant_id: Mapped[int] = mapped_column(
+        ForeignKey("mandanten.id", ondelete="RESTRICT"), index=True
+    )
+    mandant: Mapped[Mandant] = relationship()
+
     bezeichnung: Mapped[str] = mapped_column(String(160))
     art: Mapped[Leitungsart] = mapped_column(Enum(Leitungsart), default=Leitungsart.WAN)
     technologie: Mapped[Technologie] = mapped_column(
@@ -187,6 +312,11 @@ class Angebotsanfrage(TimestampMixin, Base):
     __tablename__ = "angebotsanfragen"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mandant_id: Mapped[int] = mapped_column(
+        ForeignKey("mandanten.id", ondelete="RESTRICT"), index=True
+    )
+    mandant: Mapped[Mandant] = relationship()
+
     titel: Mapped[str] = mapped_column(String(160))
     art: Mapped[Leitungsart] = mapped_column(Enum(Leitungsart), default=Leitungsart.WAN)
     status: Mapped[AnfrageStatus] = mapped_column(
@@ -226,9 +356,7 @@ class Angebot(TimestampMixin, Base):
     __table_args__ = (UniqueConstraint("anfrage_id", "provider_id", name="uq_anfrage_provider"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    anfrage_id: Mapped[int] = mapped_column(
-        ForeignKey("angebotsanfragen.id", ondelete="CASCADE")
-    )
+    anfrage_id: Mapped[int] = mapped_column(ForeignKey("angebotsanfragen.id", ondelete="CASCADE"))
     provider_id: Mapped[int] = mapped_column(ForeignKey("provider.id", ondelete="CASCADE"))
 
     anfrage: Mapped[Angebotsanfrage] = relationship(back_populates="angebote")

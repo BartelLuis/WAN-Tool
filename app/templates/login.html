@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Anmeldung &ndash; {{ app_title }}</title>
+  <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/style.css" rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+<div class="einstufung">Nur fuer den Dienstgebrauch &ndash; {{ behoerde }}</div>
+
+<div class="anmeldung">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h1 class="h5 mb-1">{{ app_title }}</h1>
+      <p class="text-muted small">{{ behoerde }}</p>
+
+      {% if fehler %}
+      <div class="alert alert-danger py-2 small">{{ fehler }}</div>
+      {% endif %}
+
+      <form method="post" action="/login" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="mb-3">
+          <label class="form-label" for="benutzername">Benutzername</label>
+          <input class="form-control" id="benutzername" name="benutzername" required autofocus
+                 autocomplete="username" maxlength="80">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="passwort">Passwort</label>
+          <input class="form-control" id="passwort" name="passwort" type="password" required
+                 autocomplete="current-password" maxlength="200">
+        </div>
+        <button class="btn btn-primary w-100">Anmelden</button>
+      </form>
+    </div>
+  </div>
+  <p class="text-center text-muted small mt-3">
+    Zugriffe werden protokolliert. Unbefugte Nutzung ist untersagt.
+  </p>
+</div>
+</body>
+</html>

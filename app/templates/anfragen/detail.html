@@ -1,13 +1,17 @@
 {% extends "basis.html" %}
 {% set a = anfrage %}
+{% set schreibend = benutzer and benutzer.darf_schreiben %}
 {% block ueberschrift %}Anfrage #{{ a.id }} &ndash; {{ a.titel }}{% endblock %}
 {% block aktionen %}
   <a class="btn btn-outline-secondary" href="/anfragen">Zurueck</a>
+  {% if schreibend %}
   <a class="btn btn-primary" href="/anfragen/{{ a.id }}/bearbeiten">Bearbeiten</a>
+  {% endif %}
 {% endblock %}
 
 {% block inhalt %}
 <div class="mb-3">
+  <span class="badge text-bg-{{ status_farbe(a.mandant.art) }}">{{ a.mandant.anzeigename }}</span>
   <span class="badge text-bg-{{ status_farbe(a.status) }}">{{ a.status.value }}</span>
   <span class="badge text-bg-secondary">{{ a.art.value }}</span>
 </div>
@@ -32,7 +36,7 @@
     <div class="card shadow-sm h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Anschreiben (kopierfertig)</span>
-        <button class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('anschreiben').innerText)">Kopieren</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-kopieren="anschreiben">Kopieren</button>
       </div>
       <div class="card-body">
         <pre class="anschreiben mb-0" id="anschreiben">{{ anschreiben }}</pre>
@@ -44,7 +48,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span>Angefragte Provider &amp; Angebote</span>
-    {% if a.angebote %}
+    {% if schreibend and a.angebote %}
     <button class="btn btn-sm btn-outline-primary" form="versenden-formular">Als versendet markieren</button>
     {% endif %}
   </div>
@@ -63,7 +67,8 @@
           <td>
             {{ ang.provider.name }}
             {% if ang.provider.email %}
-            <a class="ms-1" href="mailto:{{ ang.provider.email }}?subject={{ ('Angebotsanfrage: ' ~ a.titel) | urlencode }}" title="E-Mail an Provider">&#9993;</a>
+            <a class="ms-1" href="mailto:{{ ang.provider.email }}?subject={{ ('Angebotsanfrage: ' ~ a.titel) | urlencode }}"
+               title="E-Mail an Provider">&#9993;</a>
             {% endif %}
           </td>
           <td><span class="badge text-bg-{{ status_farbe(ang.status) }}">{{ ang.status.value }}</span></td>
@@ -77,10 +82,11 @@
           <td>{{ ang.bereitstellung_wochen or "-" }} Wo.</td>
           <td>{{ ang.gueltig_bis | datum }}</td>
           <td class="text-end text-nowrap">
+            {% if schreibend %}
             <a class="btn btn-sm btn-outline-secondary" href="/anfragen/{{ a.id }}/angebote/{{ ang.id }}">Erfassen</a>
-            {% if ang.status.value not in ("beauftragt",) %}
-            <button class="btn btn-sm btn-outline-success" form="beauftragen-{{ ang.id }}"
-                    onclick="return confirm('Angebot beauftragen? Es wird eine Leitung angelegt.');">Beauftragen</button>
+            {% if ang.status != AngebotStatus.BEAUFTRAGT %}
+            <button class="btn btn-sm btn-outline-success" form="beauftragen-{{ ang.id }}">Beauftragen</button>
+            {% endif %}
             {% endif %}
           </td>
         </tr>
@@ -90,12 +96,15 @@
       </tbody>
     </table>
   </div>
-  {% if offene_provider %}
+  {% if schreibend and offene_provider %}
   <div class="card-body border-top">
     <form method="post" action="/anfragen/{{ a.id }}/provider-hinzufuegen" class="row g-2 align-items-end">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="col-md-8">
-        <label class="form-label">Provider zur Anfrage hinzufuegen (Mehrfachauswahl mit Strg)</label>
-        <select class="form-select" name="provider_ids" multiple size="5">
+        <label class="form-label" for="provider-auswahl">
+          Provider zur Anfrage hinzufuegen (Mehrfachauswahl mit Strg)
+        </label>
+        <select class="form-select" id="provider-auswahl" name="provider_ids" multiple size="5">
           {% for p in offene_provider %}
           <option value="{{ p.id }}">{{ p.name }}{% if p.ansprechpartner %} &ndash; {{ p.ansprechpartner }}{% endif %}</option>
           {% endfor %}
@@ -112,8 +121,10 @@
   <div class="card-header">Aus dieser Anfrage entstandene Leitungen</div>
   <ul class="list-group list-group-flush">
     {% for l in a.leitungen %}
-    <li class="list-group-item"><a href="/leitungen/{{ l.id }}">{{ l.bezeichnung }}</a>
-      <span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span></li>
+    <li class="list-group-item">
+      <a href="/leitungen/{{ l.id }}">{{ l.bezeichnung }}</a>
+      <span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span>
+    </li>
     {% endfor %}
   </ul>
 </div>
@@ -126,8 +137,16 @@
 </div>
 {% endif %}
 
-<form id="versenden-formular" method="post" action="/anfragen/{{ a.id }}/versenden"></form>
+{% if schreibend %}
+<form id="versenden-formular" method="post" action="/anfragen/{{ a.id }}/versenden">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+</form>
 {% for ang in a.angebote %}
-<form id="beauftragen-{{ ang.id }}" method="post" action="/anfragen/{{ a.id }}/angebote/{{ ang.id }}/beauftragen"></form>
+<form id="beauftragen-{{ ang.id }}" method="post"
+      action="/anfragen/{{ a.id }}/angebote/{{ ang.id }}/beauftragen"
+      data-bestaetigen="Angebot von {{ ang.provider.name }} beauftragen? Es wird eine Leitung angelegt.">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+</form>
 {% endfor %}
+{% endif %}
 {% endblock %}

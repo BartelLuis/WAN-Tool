@@ -17,3 +17,36 @@ pre.anschreiben {
   padding: 1rem;
   font-size: .9rem;
 }
+
+/* Klappmenue ohne Bootstrap-JavaScript */
+.navbar-menue {
+  display: none;
+  width: 100%;
+}
+
+.navbar-menue.offen {
+  display: block;
+}
+
+@media (min-width: 992px) {
+  .navbar-menue {
+    display: flex !important;
+    width: auto;
+    align-items: center;
+  }
+}
+
+.einstufung {
+  background: #0d3b66;
+  color: #fff;
+  text-align: center;
+  font-size: .78rem;
+  letter-spacing: .08em;
+  padding: .2rem 0;
+  text-transform: uppercase;
+}
+
+.anmeldung {
+  max-width: 26rem;
+  margin: 4rem auto;
+}

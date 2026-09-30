@@ -3,7 +3,9 @@
 {% block ueberschrift %}{{ l.bezeichnung }}{% endblock %}
 {% block aktionen %}
   <a class="btn btn-outline-secondary" href="/leitungen">Zurueck</a>
+  {% if benutzer and benutzer.darf_schreiben %}
   <a class="btn btn-primary" href="/leitungen/{{ l.id }}/bearbeiten">Bearbeiten</a>
+  {% endif %}
 {% endblock %}
 
 {% macro zeile(bezeichnung, wert) %}
@@ -12,6 +14,7 @@
 
 {% block inhalt %}
 <div class="mb-3">
+  <span class="badge text-bg-{{ status_farbe(l.mandant.art) }}">{{ l.mandant.anzeigename }}</span>
   <span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span>
   <span class="badge text-bg-secondary">{{ l.art.value }}</span>
   <span class="badge text-bg-light text-dark">{{ l.technologie.value }}</span>
@@ -22,6 +25,7 @@
     <div class="card shadow-sm h-100">
       <div class="card-header">Zuordnung</div>
       <table class="table table-sm mb-0">
+        {{ zeile("Mandant", l.mandant.anzeigename) }}
         {{ zeile("Provider", l.provider.name if l.provider else None) }}
         {{ zeile("Standort A", l.standort_a.name if l.standort_a else None) }}
         {{ zeile("Standort B", l.standort_b.name if l.standort_b else None) }}

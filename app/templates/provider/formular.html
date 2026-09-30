@@ -1,41 +1,58 @@
 {% extends "basis.html" %}
-{% block ueberschrift %}{{ "Provider bearbeiten" if eintrag else "Neuer Provider" }}{% endblock %}
+{% set e = eintrag %}
+{% block ueberschrift %}{{ "Provider bearbeiten" if e else "Neuer Provider" }}{% endblock %}
 
 {% block inhalt %}
 <form method="post" action="/provider/speichern" class="card shadow-sm">
-  <input type="hidden" name="provider_id" value="{{ eintrag.id if eintrag else '' }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="provider_id" value="{{ e.id if e else '' }}">
   <div class="card-body row g-3">
-    <div class="col-md-8">
-      <label class="form-label">Name *</label>
-      <input class="form-control" name="name" required value="{{ eintrag.name if eintrag else '' }}">
+    <div class="col-md-4">
+      <label class="form-label" for="mandant">Mandant *</label>
+      <select class="form-select" id="mandant" name="mandant_id" required>
+        {% for m in mandanten %}
+        <option value="{{ m.id }}" {{ 'selected' if e and e.mandant_id == m.id }}>{{ m.anzeigename }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="name">Name *</label>
+      <input class="form-control" id="name" name="name" required maxlength="120"
+             value="{{ e.name if e else '' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="kdnr">Kundennummer</label>
+      <input class="form-control" id="kdnr" name="kundennummer" maxlength="60"
+             value="{{ e.kundennummer or '' if e else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Kundennummer</label>
-      <input class="form-control" name="kundennummer" value="{{ eintrag.kundennummer or '' if eintrag else '' }}">
+      <label class="form-label" for="ap">Ansprechpartner</label>
+      <input class="form-control" id="ap" name="ansprechpartner" maxlength="120"
+             value="{{ e.ansprechpartner or '' if e else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Ansprechpartner</label>
-      <input class="form-control" name="ansprechpartner" value="{{ eintrag.ansprechpartner or '' if eintrag else '' }}">
+      <label class="form-label" for="email">E-Mail</label>
+      <input class="form-control" id="email" type="email" name="email" maxlength="160"
+             value="{{ e.email or '' if e else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">E-Mail</label>
-      <input class="form-control" type="email" name="email" value="{{ eintrag.email or '' if eintrag else '' }}">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Telefon</label>
-      <input class="form-control" name="telefon" value="{{ eintrag.telefon or '' if eintrag else '' }}">
+      <label class="form-label" for="tel">Telefon</label>
+      <input class="form-control" id="tel" name="telefon" maxlength="60"
+             value="{{ e.telefon or '' if e else '' }}">
     </div>
     <div class="col-md-6">
-      <label class="form-label">Webseite</label>
-      <input class="form-control" name="webseite" value="{{ eintrag.webseite or '' if eintrag else '' }}">
+      <label class="form-label" for="web">Webseite</label>
+      <input class="form-control" id="web" name="webseite" maxlength="200"
+             value="{{ e.webseite or '' if e else '' }}">
     </div>
     <div class="col-md-6">
-      <label class="form-label">Stoerungshotline</label>
-      <input class="form-control" name="stoerungshotline" value="{{ eintrag.stoerungshotline or '' if eintrag else '' }}">
+      <label class="form-label" for="hotline">Stoerungshotline</label>
+      <input class="form-control" id="hotline" name="stoerungshotline" maxlength="60"
+             value="{{ e.stoerungshotline or '' if e else '' }}">
     </div>
     <div class="col-12">
-      <label class="form-label">Notizen</label>
-      <textarea class="form-control" name="notizen" rows="3">{{ eintrag.notizen or '' if eintrag else '' }}</textarea>
+      <label class="form-label" for="notizen">Notizen</label>
+      <textarea class="form-control" id="notizen" name="notizen" rows="3">{{ e.notizen or '' if e else '' }}</textarea>
     </div>
   </div>
   <div class="card-footer d-flex gap-2">

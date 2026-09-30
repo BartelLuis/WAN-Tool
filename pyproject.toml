@@ -1,0 +1,24 @@
+[project]
+name = "wan-tool"
+version = "1.0.0"
+description = "Mandantenfaehige Dokumentation von WAN- und TK-Leitungen inklusive Angebotsanfragen"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "S", "RUF"]
+ignore = [
+    "S101",  # assert wird in Tests verwendet
+    "B008",  # Depends() im Funktionskopf ist bei FastAPI ueblich
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning:app.*"]

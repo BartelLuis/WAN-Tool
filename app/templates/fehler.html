@@ -1,11 +1,14 @@
 {% extends "basis.html" %}
 {% block titel %}Fehler{% endblock %}
-{% block ueberschrift %}Eingabe nicht moeglich{% endblock %}
+{% block ueberschrift %}Vorgang nicht moeglich{% endblock %}
 
 {% block inhalt %}
 <div class="alert alert-warning">
-  <p class="mb-2">{{ meldung }}</p>
-  <p class="mb-0 small text-muted">{{ details }}</p>
+  <p class="mb-0">{{ meldung }}</p>
+  {% if details %}<p class="mb-0 small text-muted mt-2">{{ details }}</p>{% endif %}
 </div>
-<a class="btn btn-outline-secondary" href="javascript:history.back()">Zurueck zum Formular</a>
+<div class="d-flex gap-2">
+  <a class="btn btn-outline-secondary" href="#" data-zurueck>Zurueck</a>
+  <a class="btn btn-outline-secondary" href="/">Zum Dashboard</a>
+</div>
 {% endblock %}

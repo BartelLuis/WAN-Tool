@@ -8,16 +8,17 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.models import (
-    Angebot,
-    AngebotStatus,
-    Angebotsanfrage,
     AnfrageStatus,
+    Angebot,
+    Angebotsanfrage,
+    AngebotStatus,
     Leitung,
     LeitungStatus,
 )
 
 CSV_SPALTEN = [
     "ID",
+    "Mandant",
     "Bezeichnung",
     "Art",
     "Technologie",
@@ -51,6 +52,7 @@ def leitungen_csv(leitungen: Iterable[Leitung]) -> str:
         writer.writerow(
             [
                 leitung.id,
+                leitung.mandant.name if leitung.mandant else "",
                 leitung.bezeichnung,
                 leitung.art.value,
                 leitung.technologie.value,
@@ -89,8 +91,10 @@ def anfragetext(anfrage: Angebotsanfrage, angebot: Angebot | None = None) -> str
         "",
         f"wir bitten um ein Angebot fuer folgende {anfrage.art.value}-Leitung:",
         "",
-        f"Vorgang: {anfrage.titel}",
     ]
+    if anfrage.mandant:
+        zeilen.append(f"Auftraggeber: {anfrage.mandant.anzeigename}")
+    zeilen.append(f"Vorgang: {anfrage.titel}")
     if anfrage.standort_a:
         zeilen.append(f"Standort A: {anfrage.standort_a.name} ({anfrage.standort_a.anschrift})")
     if anfrage.standort_b:
@@ -113,7 +117,8 @@ def anfragetext(anfrage: Angebotsanfrage, angebot: Angebot | None = None) -> str
         zeilen += ["", f"Bitte senden Sie uns Ihr Angebot bis zum {anfrage.abgabefrist:%d.%m.%Y}."]
     zeilen += [
         "",
-        "Bitte weisen Sie einmalige und monatliche Kosten, Laufzeit, Bereitstellungszeit und SLA separat aus.",
+        "Bitte weisen Sie einmalige und monatliche Kosten, Laufzeit, "
+        "Bereitstellungszeit und SLA separat aus.",
         "",
         "Mit freundlichen Gruessen",
     ]
@@ -130,6 +135,7 @@ def angebot_beauftragen(db: Session, angebot: Angebot) -> Leitung:
     anfrage.status = AnfrageStatus.BEAUFTRAGT
 
     leitung = Leitung(
+        mandant_id=anfrage.mandant_id,
         bezeichnung=anfrage.titel,
         art=anfrage.art,
         technologie=angebot.technologie or anfrage.wunsch_technologie,
@@ -150,6 +156,5 @@ def angebot_beauftragen(db: Session, angebot: Angebot) -> Leitung:
     if angebot.laufzeit_monate:
         leitung.verlaengerung_monate = 12
     db.add(leitung)
-    db.commit()
-    db.refresh(leitung)
+    db.flush()
     return leitung

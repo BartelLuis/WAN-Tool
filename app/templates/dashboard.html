@@ -1,10 +1,21 @@
 {% extends "basis.html" %}
 {% block ueberschrift %}Dashboard{% endblock %}
 {% block aktionen %}
+  {% if benutzer and benutzer.darf_schreiben %}
   <a class="btn btn-primary" href="/anfragen/neu">Neue Angebotsanfrage</a>
+  {% endif %}
 {% endblock %}
 
 {% block inhalt %}
+{% if mandanten | length > 1 %}
+<div class="alert alert-info py-2 small">
+  Sichtbare Mandanten:
+  {% for m in mandanten %}
+  <span class="badge text-bg-{{ status_farbe(m.art) }}">{{ m.art.value }} {{ m.name }}</span>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
   {% set kacheln = [
     ("Leitungen", kennzahlen.leitungen, "/leitungen"),
@@ -41,17 +52,18 @@
       <div class="card-header">Vertragsenden in den naechsten 120 Tagen</div>
       <div class="table-responsive">
         <table class="table table-sm tabelle-kompakt mb-0">
-          <thead><tr><th>Leitung</th><th>Provider</th><th>Vertragsende</th><th>Frist</th></tr></thead>
+          <thead><tr><th>Leitung</th><th>Mandant</th><th>Provider</th><th>Vertragsende</th><th>Frist</th></tr></thead>
           <tbody>
           {% for leitung in auslaufend %}
             <tr>
               <td><a href="/leitungen/{{ leitung.id }}">{{ leitung.bezeichnung }}</a></td>
+              <td>{{ leitung.mandant.name }}</td>
               <td>{{ leitung.provider.name if leitung.provider else "-" }}</td>
               <td>{{ leitung.vertragsende | datum }}</td>
               <td>{{ leitung.kuendigungsfrist_monate or "-" }} Mon.</td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="text-muted">Keine auslaufenden Vertraege.</td></tr>
+            <tr><td colspan="5" class="text-muted">Keine auslaufenden Vertraege.</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -79,7 +91,10 @@
       <ul class="list-group list-group-flush">
         {% for anfrage in letzte_anfragen %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-          <a href="/anfragen/{{ anfrage.id }}">{{ anfrage.titel }}</a>
+          <span>
+            <a href="/anfragen/{{ anfrage.id }}">{{ anfrage.titel }}</a>
+            <span class="text-muted small d-block">{{ anfrage.mandant.anzeigename }}</span>
+          </span>
           <span class="badge text-bg-{{ status_farbe(anfrage.status) }}">{{ anfrage.status.value }}</span>
         </li>
         {% else %}

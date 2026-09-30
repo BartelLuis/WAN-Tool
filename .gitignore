@@ -1,8 +1,12 @@
 .env
+.env.*
+!.env.example
+secrets/
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 .mysql-data/
 .pytest_cache/
-compose-up.log
+.ruff_cache/
+*.log

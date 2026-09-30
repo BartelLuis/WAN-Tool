@@ -1,0 +1,52 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Zugriffsprotokoll{% endblock %}
+
+{% block inhalt %}
+<form class="card card-body shadow-sm mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label" for="a-aktion">Aktion</label>
+      <input class="form-control" id="a-aktion" name="aktion" value="{{ filter.aktion }}"
+             placeholder="z.B. anmeldung, geloescht">
+    </div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary">Filtern</button></div>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm tabelle-kompakt mb-0">
+      <thead>
+        <tr><th>Zeitpunkt</th><th>Benutzer</th><th>Mandant</th><th>Aktion</th>
+            <th>Objekt</th><th>Beschreibung</th><th>IP</th></tr>
+      </thead>
+      <tbody>
+      {% for e in eintraege %}
+        <tr>
+          <td class="text-nowrap">{{ e.zeitpunkt | zeitpunkt }}</td>
+          <td><code>{{ e.benutzername }}</code></td>
+          <td>{{ e.mandant_name or "-" }}</td>
+          <td>{{ e.aktion }}</td>
+          <td>{{ e.objekt_typ }}{% if e.objekt_id %} #{{ e.objekt_id }}{% endif %}</td>
+          <td>{{ e.beschreibung or "-" }}</td>
+          <td>{{ e.ip or "-" }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-muted">Keine Eintraege.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer d-flex justify-content-between">
+    {% if seite > 1 %}
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/verwaltung/audit?aktion={{ filter.aktion }}&seite={{ seite - 1 }}">Zurueck</a>
+    {% else %}<span></span>{% endif %}
+    <span class="text-muted small">Seite {{ seite }}</span>
+    {% if weitere %}
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/verwaltung/audit?aktion={{ filter.aktion }}&seite={{ seite + 1 }}">Weiter</a>
+    {% else %}<span></span>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -4,25 +4,42 @@ services:
     container_name: wantool-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wantool}
+      MYSQL_USER: ${MYSQL_USER:-wantool}
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-name-resolve
+      --local-infile=0
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - intern
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$(cat /run/secrets/mysql_root_password)\""]
       interval: 10s
       timeout: 5s
       retries: 20
-      start_period: 30s
-    # Nur lokal freigeben; fuer reinen Container-Betrieb kann der Block entfallen.
-    ports:
-      - "127.0.0.1:3307:3306"
+      start_period: 40s
 
   app:
     build: .
+    image: wan-tool:latest
     container_name: wantool-app
     restart: unless-stopped
     depends_on:
@@ -30,12 +47,43 @@ services:
         condition: service_healthy
     environment:
       MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wantool}
+      MYSQL_USER: ${MYSQL_USER:-wantool}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD muss in .env gesetzt sein}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET muss in .env gesetzt sein}
+      ADMIN_BENUTZER: ${ADMIN_BENUTZER:-admin}
+      ADMIN_PASSWORT: ${ADMIN_PASSWORT:?ADMIN_PASSWORT muss in .env gesetzt sein}
+      BEHOERDE: ${BEHOERDE:-Kommunale IT}
+      UMGEBUNG: ${UMGEBUNG:-produktion}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      ERLAUBTE_HOSTS_ROH: ${ERLAUBTE_HOSTS:-*}
+      DOCS_AKTIV: ${DOCS_AKTIV:-false}
+      START_MANDANT_NAME: ${START_MANDANT_NAME:-Muster}
+      START_MANDANT_KENNZEICHEN: ${START_MANDANT_KENNZEICHEN:-MUSTER}
+      START_MANDANT_ART: ${START_MANDANT_ART:-Kreis}
+    # Nur lokal gebunden; davor gehoert ein TLS-Reverse-Proxy.
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+    networks:
+      - intern
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password
+  mysql_password:
+    file: ./secrets/mysql_password
+
+networks:
+  intern:
+    driver: bridge
 
 volumes:
   db_data:

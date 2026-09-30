@@ -4,59 +4,69 @@
 
 {% block inhalt %}
 <form method="post" action="/leitungen/speichern" class="card shadow-sm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <input type="hidden" name="leitung_id" value="{{ l.id if l else '' }}">
   <div class="card-body">
     <h2 class="h6 text-uppercase text-muted">Allgemein</h2>
     <div class="row g-3 mb-4">
-      <div class="col-md-6">
-        <label class="form-label">Bezeichnung *</label>
-        <input class="form-control" name="bezeichnung" required value="{{ l.bezeichnung if l else '' }}">
+      <div class="col-md-3">
+        <label class="form-label" for="mandant">Mandant *</label>
+        <select class="form-select" id="mandant" name="mandant_id" required>
+          {% for m in mandanten %}
+          <option value="{{ m.id }}" {{ 'selected' if l and l.mandant_id == m.id }}>{{ m.anzeigename }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="bez">Bezeichnung *</label>
+        <input class="form-control" id="bez" name="bezeichnung" required maxlength="160"
+               value="{{ l.bezeichnung if l else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Art</label>
-        <select class="form-select" name="art">
+        <label class="form-label" for="art">Art</label>
+        <select class="form-select" id="art" name="art">
           {% for a in Leitungsart %}
           <option value="{{ a.value }}" {{ 'selected' if l and l.art == a }}>{{ a.value }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label">Technologie</label>
-        <select class="form-select" name="technologie">
-          {% for t in Technologie %}
-          <option value="{{ t.value }}" {{ 'selected' if l and l.technologie == t }}>{{ t.value }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Status</label>
-        <select class="form-select" name="status">
+        <label class="form-label" for="status">Status</label>
+        <select class="form-select" id="status" name="status">
           {% for s in LeitungStatus %}
           <option value="{{ s.value }}" {{ 'selected' if l and l.status == s }}>{{ s.value }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Provider</label>
-        <select class="form-select" name="provider_id">
+      <div class="col-md-3">
+        <label class="form-label" for="tech">Technologie</label>
+        <select class="form-select" id="tech" name="technologie">
+          {% for t in Technologie %}
+          <option value="{{ t.value }}" {{ 'selected' if l and l.technologie == t }}>{{ t.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="provider">Provider</label>
+        <select class="form-select" id="provider" name="provider_id">
           <option value="">-</option>
           {% for p in providerliste %}
           <option value="{{ p.id }}" {{ 'selected' if l and l.provider_id == p.id }}>{{ p.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Standort A</label>
-        <select class="form-select" name="standort_a_id">
+      <div class="col-md-3">
+        <label class="form-label" for="sa">Standort A</label>
+        <select class="form-select" id="sa" name="standort_a_id">
           <option value="">-</option>
           {% for s in standorte %}
           <option value="{{ s.id }}" {{ 'selected' if l and l.standort_a_id == s.id }}>{{ s.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Standort B (bei Punkt-zu-Punkt)</label>
-        <select class="form-select" name="standort_b_id">
+      <div class="col-md-3">
+        <label class="form-label" for="sb">Standort B (bei Punkt-zu-Punkt)</label>
+        <select class="form-select" id="sb" name="standort_b_id">
           <option value="">-</option>
           {% for s in standorte %}
           <option value="{{ s.id }}" {{ 'selected' if l and l.standort_b_id == s.id }}>{{ s.name }}</option>
@@ -68,80 +78,97 @@
     <h2 class="h6 text-uppercase text-muted">Technik</h2>
     <div class="row g-3 mb-4">
       <div class="col-md-2">
-        <label class="form-label">Down (Mbit/s)</label>
-        <input class="form-control" type="number" min="0" name="bandbreite_down_mbit" value="{{ l.bandbreite_down_mbit if l and l.bandbreite_down_mbit is not none else '' }}">
+        <label class="form-label" for="down">Down (Mbit/s)</label>
+        <input class="form-control" id="down" type="number" min="0" name="bandbreite_down_mbit"
+               value="{{ l.bandbreite_down_mbit if l and l.bandbreite_down_mbit is not none else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Up (Mbit/s)</label>
-        <input class="form-control" type="number" min="0" name="bandbreite_up_mbit" value="{{ l.bandbreite_up_mbit if l and l.bandbreite_up_mbit is not none else '' }}">
+        <label class="form-label" for="up">Up (Mbit/s)</label>
+        <input class="form-control" id="up" type="number" min="0" name="bandbreite_up_mbit"
+               value="{{ l.bandbreite_up_mbit if l and l.bandbreite_up_mbit is not none else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Sprachkanaele</label>
-        <input class="form-control" type="number" min="0" name="sprachkanaele" value="{{ l.sprachkanaele if l and l.sprachkanaele is not none else '' }}">
+        <label class="form-label" for="kanaele">Sprachkanaele</label>
+        <input class="form-control" id="kanaele" type="number" min="0" name="sprachkanaele"
+               value="{{ l.sprachkanaele if l and l.sprachkanaele is not none else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label">Rufnummernblock</label>
-        <input class="form-control" name="rufnummernblock" value="{{ l.rufnummernblock or '' if l else '' }}">
+        <label class="form-label" for="rufnr">Rufnummernblock</label>
+        <input class="form-control" id="rufnr" name="rufnummernblock" maxlength="160"
+               value="{{ l.rufnummernblock or '' if l else '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">Circuit-ID</label>
-        <input class="form-control" name="circuit_id" value="{{ l.circuit_id or '' if l else '' }}">
+        <label class="form-label" for="circuit">Circuit-ID</label>
+        <input class="form-control" id="circuit" name="circuit_id" maxlength="120"
+               value="{{ l.circuit_id or '' if l else '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">Anschlusskennung</label>
-        <input class="form-control" name="anschlusskennung" value="{{ l.anschlusskennung or '' if l else '' }}">
+        <label class="form-label" for="kennung">Anschlusskennung</label>
+        <input class="form-control" id="kennung" name="anschlusskennung" maxlength="120"
+               value="{{ l.anschlusskennung or '' if l else '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">Transfernetz</label>
-        <input class="form-control" name="ip_transfernetz" value="{{ l.ip_transfernetz or '' if l else '' }}">
+        <label class="form-label" for="transfer">Transfernetz</label>
+        <input class="form-control" id="transfer" name="ip_transfernetz" maxlength="120"
+               value="{{ l.ip_transfernetz or '' if l else '' }}">
       </div>
       <div class="col-md-3">
-        <label class="form-label">LAN-Netz</label>
-        <input class="form-control" name="ip_lan_netz" value="{{ l.ip_lan_netz or '' if l else '' }}">
+        <label class="form-label" for="lan">LAN-Netz</label>
+        <input class="form-control" id="lan" name="ip_lan_netz" maxlength="120"
+               value="{{ l.ip_lan_netz or '' if l else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label">Router / Endgeraet</label>
-        <input class="form-control" name="router_typ" value="{{ l.router_typ or '' if l else '' }}">
+        <label class="form-label" for="router">Router / Endgeraet</label>
+        <input class="form-control" id="router" name="router_typ" maxlength="120"
+               value="{{ l.router_typ or '' if l else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label">SLA</label>
-        <input class="form-control" name="sla" value="{{ l.sla or '' if l else '' }}">
+        <label class="form-label" for="sla">SLA</label>
+        <input class="form-control" id="sla" name="sla" maxlength="120"
+               value="{{ l.sla or '' if l else '' }}">
       </div>
     </div>
 
     <h2 class="h6 text-uppercase text-muted">Vertrag</h2>
     <div class="row g-3">
       <div class="col-md-3">
-        <label class="form-label">Vertragsnummer</label>
-        <input class="form-control" name="vertragsnummer" value="{{ l.vertragsnummer or '' if l else '' }}">
+        <label class="form-label" for="vnr">Vertragsnummer</label>
+        <input class="form-control" id="vnr" name="vertragsnummer" maxlength="120"
+               value="{{ l.vertragsnummer or '' if l else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Kosten mtl. (EUR)</label>
-        <input class="form-control" type="number" step="0.01" name="kosten_monatlich" value="{{ l.kosten_monatlich if l and l.kosten_monatlich is not none else '' }}">
+        <label class="form-label" for="mtl">Kosten mtl. (EUR)</label>
+        <input class="form-control" id="mtl" type="number" step="0.01" name="kosten_monatlich"
+               value="{{ l.kosten_monatlich if l and l.kosten_monatlich is not none else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Einmalig (EUR)</label>
-        <input class="form-control" type="number" step="0.01" name="kosten_einmalig" value="{{ l.kosten_einmalig if l and l.kosten_einmalig is not none else '' }}">
+        <label class="form-label" for="einmal">Einmalig (EUR)</label>
+        <input class="form-control" id="einmal" type="number" step="0.01" name="kosten_einmalig"
+               value="{{ l.kosten_einmalig if l and l.kosten_einmalig is not none else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Vertragsbeginn</label>
-        <input class="form-control" type="date" name="vertragsbeginn" value="{{ l.vertragsbeginn if l and l.vertragsbeginn else '' }}">
+        <label class="form-label" for="beginn">Vertragsbeginn</label>
+        <input class="form-control" id="beginn" type="date" name="vertragsbeginn"
+               value="{{ l.vertragsbeginn if l and l.vertragsbeginn else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Vertragsende</label>
-        <input class="form-control" type="date" name="vertragsende" value="{{ l.vertragsende if l and l.vertragsende else '' }}">
+        <label class="form-label" for="ende">Vertragsende</label>
+        <input class="form-control" id="ende" type="date" name="vertragsende"
+               value="{{ l.vertragsende if l and l.vertragsende else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Kuendigungsfrist (Mon.)</label>
-        <input class="form-control" type="number" min="0" name="kuendigungsfrist_monate" value="{{ l.kuendigungsfrist_monate if l and l.kuendigungsfrist_monate is not none else '' }}">
+        <label class="form-label" for="frist">Kuendigungsfrist (Mon.)</label>
+        <input class="form-control" id="frist" type="number" min="0" name="kuendigungsfrist_monate"
+               value="{{ l.kuendigungsfrist_monate if l and l.kuendigungsfrist_monate is not none else '' }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label">Verlaengerung (Mon.)</label>
-        <input class="form-control" type="number" min="0" name="verlaengerung_monate" value="{{ l.verlaengerung_monate if l and l.verlaengerung_monate is not none else '' }}">
+        <label class="form-label" for="verl">Verlaengerung (Mon.)</label>
+        <input class="form-control" id="verl" type="number" min="0" name="verlaengerung_monate"
+               value="{{ l.verlaengerung_monate if l and l.verlaengerung_monate is not none else '' }}">
       </div>
       <div class="col-12">
-        <label class="form-label">Notizen</label>
-        <textarea class="form-control" name="notizen" rows="3">{{ l.notizen or '' if l else '' }}</textarea>
+        <label class="form-label" for="notizen">Notizen</label>
+        <textarea class="form-control" id="notizen" name="notizen" rows="3">{{ l.notizen or '' if l else '' }}</textarea>
       </div>
     </div>
   </div>
@@ -149,12 +176,14 @@
     <button class="btn btn-primary">Speichern</button>
     <a class="btn btn-outline-secondary" href="/leitungen">Abbrechen</a>
     {% if l %}
-    <button class="btn btn-outline-danger ms-auto" form="loeschen-formular"
-            onclick="return confirm('Leitung wirklich loeschen?');">Loeschen</button>
+    <button class="btn btn-outline-danger ms-auto" form="leitung-loeschen">Loeschen</button>
     {% endif %}
   </div>
 </form>
 {% if l %}
-<form id="loeschen-formular" method="post" action="/leitungen/{{ l.id }}/loeschen"></form>
+<form id="leitung-loeschen" method="post" action="/leitungen/{{ l.id }}/loeschen"
+      data-bestaetigen="Leitung &quot;{{ l.bezeichnung }}&quot; wirklich loeschen?">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+</form>
 {% endif %}
 {% endblock %}

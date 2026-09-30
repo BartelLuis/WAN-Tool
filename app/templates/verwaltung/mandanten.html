@@ -1,0 +1,87 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Mandanten{% endblock %}
+
+{% block inhalt %}
+<div class="card shadow-sm mb-4">
+  <div class="table-responsive">
+    <table class="table table-hover tabelle-kompakt mb-0">
+      <thead><tr><th>Name</th><th>Art</th><th>Kennzeichen</th><th>Uebergeordnet</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for m in mandanten %}
+        <tr>
+          <td>{{ m.name }}</td>
+          <td><span class="badge text-bg-{{ status_farbe(m.art) }}">{{ m.art.value }}</span></td>
+          <td><code>{{ m.kennzeichen }}</code></td>
+          <td>{{ m.uebergeordnet.name if m.uebergeordnet else "-" }}</td>
+          <td>
+            {% if m.aktiv %}<span class="badge text-bg-success">aktiv</span>
+            {% else %}<span class="badge text-bg-dark">gesperrt</span>{% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="text-muted">Keine Mandanten vorhanden.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if benutzer and benutzer.ist_admin %}
+<div class="card shadow-sm">
+  <div class="card-header">Mandant anlegen oder aendern</div>
+  <form method="post" action="/verwaltung/mandanten/speichern">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="card-body row g-3">
+      <div class="col-md-2">
+        <label class="form-label" for="m-id">ID (leer = neu)</label>
+        <input class="form-control" id="m-id" name="mandant_id" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="m-name">Name</label>
+        <input class="form-control" id="m-name" name="name" required maxlength="160"
+               placeholder="z.B. Musterhausen">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="m-art">Art</label>
+        <select class="form-select" id="m-art" name="art">
+          {% for a in MandantArt %}
+          <option value="{{ a.value }}">{{ a.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="m-kz">Kennzeichen</label>
+        <input class="form-control" id="m-kz" name="kennzeichen" required maxlength="20"
+               placeholder="z.B. GEM-MH">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="m-ueber">Uebergeordneter Mandant</label>
+        <select class="form-select" id="m-ueber" name="uebergeordnet_id">
+          <option value="">- keiner -</option>
+          {% for m in mandanten %}
+          <option value="{{ m.id }}">{{ m.anzeigename }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="m-aktiv" name="aktiv" value="1" checked>
+          <label class="form-check-label" for="m-aktiv">aktiv</label>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="m-notiz">Notizen</label>
+        <input class="form-control" id="m-notiz" name="notizen" maxlength="500">
+      </div>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-primary">Speichern</button>
+      <span class="text-muted small ms-2">
+        Ein Kreis als uebergeordneter Mandant ermoeglicht Benutzern mit der Option
+        &bdquo;untergeordnete Mandanten sehen&ldquo; den lesenden Blick auf Gemeinden und Aemter.
+      </span>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

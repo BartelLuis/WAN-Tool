@@ -1,13 +1,17 @@
 {% extends "basis.html" %}
 {% block ueberschrift %}Angebotsanfragen{% endblock %}
-{% block aktionen %}<a class="btn btn-primary" href="/anfragen/neu">Neue Anfrage</a>{% endblock %}
+{% block aktionen %}
+  {% if benutzer and benutzer.darf_schreiben %}
+  <a class="btn btn-primary" href="/anfragen/neu">Neue Anfrage</a>
+  {% endif %}
+{% endblock %}
 
 {% block inhalt %}
 <form class="card card-body shadow-sm mb-3" method="get">
   <div class="row g-2 align-items-end">
     <div class="col-md-4">
-      <label class="form-label">Status</label>
-      <select class="form-select" name="status">
+      <label class="form-label" for="f-status">Status</label>
+      <select class="form-select" id="f-status" name="status">
         <option value="">alle</option>
         {% for s in AnfrageStatus %}
         <option value="{{ s.value }}" {{ 'selected' if filter.status == s.value }}>{{ s.value }}</option>
@@ -22,7 +26,7 @@
   <div class="table-responsive">
     <table class="table table-hover tabelle-kompakt mb-0">
       <thead>
-        <tr><th>#</th><th>Titel</th><th>Art</th><th>Standorte</th><th>Wunsch</th>
+        <tr><th>#</th><th>Titel</th><th>Mandant</th><th>Art</th><th>Standorte</th><th>Wunsch</th>
             <th>Abgabefrist</th><th>Angebote</th><th>Status</th></tr>
       </thead>
       <tbody>
@@ -30,6 +34,7 @@
         <tr>
           <td>{{ a.id }}</td>
           <td><a href="/anfragen/{{ a.id }}">{{ a.titel }}</a></td>
+          <td><span class="badge text-bg-{{ status_farbe(a.mandant.art) }}">{{ a.mandant.name }}</span></td>
           <td>{{ a.art.value }}</td>
           <td>
             {{ a.standort_a.name if a.standort_a else "-" }}
@@ -41,7 +46,7 @@
           <td><span class="badge text-bg-{{ status_farbe(a.status) }}">{{ a.status.value }}</span></td>
         </tr>
       {% else %}
-        <tr><td colspan="8" class="text-muted">Keine Anfragen vorhanden.</td></tr>
+        <tr><td colspan="9" class="text-muted">Keine Anfragen vorhanden.</td></tr>
       {% endfor %}
       </tbody>
     </table>

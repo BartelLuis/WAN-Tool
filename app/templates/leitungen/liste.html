@@ -1,20 +1,24 @@
 {% extends "basis.html" %}
 {% block ueberschrift %}Leitungen{% endblock %}
 {% block aktionen %}
-  <a class="btn btn-outline-secondary" href="/leitungen/export.csv?art={{ filter.art }}&status={{ filter.status }}&provider_id={{ filter.provider_id }}&suche={{ filter.suche }}">CSV-Export</a>
+  <a class="btn btn-outline-secondary"
+     href="/leitungen/export.csv?art={{ filter.art }}&status={{ filter.status }}&provider_id={{ filter.provider_id }}&suche={{ filter.suche }}">CSV-Export</a>
+  {% if benutzer and benutzer.darf_schreiben %}
   <a class="btn btn-primary" href="/leitungen/neu">Neue Leitung</a>
+  {% endif %}
 {% endblock %}
 
 {% block inhalt %}
 <form class="card card-body shadow-sm mb-3" method="get">
   <div class="row g-2 align-items-end">
     <div class="col-md-3">
-      <label class="form-label">Suche</label>
-      <input class="form-control" name="suche" value="{{ filter.suche }}" placeholder="Bezeichnung, Circuit-ID, Vertrag ...">
+      <label class="form-label" for="f-suche">Suche</label>
+      <input class="form-control" id="f-suche" name="suche" value="{{ filter.suche }}"
+             placeholder="Bezeichnung, Circuit-ID, Vertrag ...">
     </div>
     <div class="col-md-2">
-      <label class="form-label">Art</label>
-      <select class="form-select" name="art">
+      <label class="form-label" for="f-art">Art</label>
+      <select class="form-select" id="f-art" name="art">
         <option value="">alle</option>
         {% for a in Leitungsart %}
         <option value="{{ a.value }}" {{ 'selected' if filter.art == a.value }}>{{ a.value }}</option>
@@ -22,8 +26,8 @@
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Status</label>
-      <select class="form-select" name="status">
+      <label class="form-label" for="f-status">Status</label>
+      <select class="form-select" id="f-status" name="status">
         <option value="">alle</option>
         {% for s in LeitungStatus %}
         <option value="{{ s.value }}" {{ 'selected' if filter.status == s.value }}>{{ s.value }}</option>
@@ -31,17 +35,15 @@
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Provider</label>
-      <select class="form-select" name="provider_id">
+      <label class="form-label" for="f-provider">Provider</label>
+      <select class="form-select" id="f-provider" name="provider_id">
         <option value="">alle</option>
         {% for p in providerliste %}
         <option value="{{ p.id }}" {{ 'selected' if filter.provider_id == p.id|string }}>{{ p.name }}</option>
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-1 d-grid">
-      <button class="btn btn-primary">Filtern</button>
-    </div>
+    <div class="col-md-1 d-grid"><button class="btn btn-primary">Filtern</button></div>
   </div>
 </form>
 
@@ -50,7 +52,7 @@
     <table class="table table-hover tabelle-kompakt mb-0">
       <thead>
         <tr>
-          <th>Bezeichnung</th><th>Art</th><th>Technologie</th><th>Provider</th>
+          <th>Bezeichnung</th><th>Mandant</th><th>Art</th><th>Technologie</th><th>Provider</th>
           <th>Standort A</th><th>Standort B</th><th>Bandbreite</th>
           <th class="text-end">mtl. Kosten</th><th>Vertragsende</th><th>Status</th><th></th>
         </tr>
@@ -59,6 +61,7 @@
       {% for l in leitungen %}
         <tr>
           <td><a href="/leitungen/{{ l.id }}">{{ l.bezeichnung }}</a></td>
+          <td><span class="badge text-bg-{{ status_farbe(l.mandant.art) }}">{{ l.mandant.name }}</span></td>
           <td>{{ l.art.value }}</td>
           <td>{{ l.technologie.value }}</td>
           <td>{{ l.provider.name if l.provider else "-" }}</td>
@@ -68,10 +71,14 @@
           <td class="text-end">{{ l.kosten_monatlich | euro }}</td>
           <td>{{ l.vertragsende | datum }}</td>
           <td><span class="badge text-bg-{{ status_farbe(l.status) }}">{{ l.status.value }}</span></td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/leitungen/{{ l.id }}/bearbeiten">Bearbeiten</a></td>
+          <td class="text-end">
+            {% if benutzer and benutzer.darf_schreiben %}
+            <a class="btn btn-sm btn-outline-secondary" href="/leitungen/{{ l.id }}/bearbeiten">Bearbeiten</a>
+            {% endif %}
+          </td>
         </tr>
       {% else %}
-        <tr><td colspan="11" class="text-muted">Keine Leitungen gefunden.</td></tr>
+        <tr><td colspan="12" class="text-muted">Keine Leitungen gefunden.</td></tr>
       {% endfor %}
       </tbody>
     </table>

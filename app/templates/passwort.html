@@ -1,0 +1,52 @@
+{% extends "basis.html" %}
+{% block titel %}Passwort aendern{% endblock %}
+{% block ueberschrift %}Passwort aendern{% endblock %}
+
+{% block inhalt %}
+<div class="row">
+  <div class="col-lg-6">
+    {% if erzwungen %}
+    <div class="alert alert-warning">
+      Das Passwort muss vor der weiteren Nutzung geaendert werden.
+    </div>
+    {% endif %}
+    {% if fehler %}
+    <div class="alert alert-danger">{{ fehler }}</div>
+    {% endif %}
+
+    <form method="post" action="/passwort" class="card shadow-sm" autocomplete="off">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="alt">Aktuelles Passwort</label>
+          <input class="form-control" id="alt" type="password" name="altes_passwort" required
+                 autocomplete="current-password">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="neu">Neues Passwort</label>
+          <input class="form-control" id="neu" type="password" name="neues_passwort" required
+                 autocomplete="new-password" minlength="12">
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="wdh">Neues Passwort wiederholen</label>
+          <input class="form-control" id="wdh" type="password" name="wiederholung" required
+                 autocomplete="new-password" minlength="12">
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-primary">Passwort speichern</button>
+      </div>
+    </form>
+
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Vorgaben</div>
+      <ul class="list-group list-group-flush small">
+        <li class="list-group-item">Mindestens 12 Zeichen</li>
+        <li class="list-group-item">Gross- und Kleinbuchstaben</li>
+        <li class="list-group-item">Mindestens eine Ziffer</li>
+        <li class="list-group-item">Mindestens ein Sonderzeichen</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

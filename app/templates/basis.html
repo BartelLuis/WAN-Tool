@@ -3,36 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
   <title>{% block titel %}{{ app_title }}{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
   <link href="/static/style.css" rel="stylesheet">
+  <script src="/static/app.js" defer></script>
 </head>
 <body class="bg-body-tertiary">
+<div class="einstufung">Nur fuer den Dienstgebrauch &ndash; {{ behoerde }}</div>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-  <div class="container-fluid">
+  <div class="container-fluid flex-wrap">
     <a class="navbar-brand" href="/">{{ app_title }}</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+    <button class="navbar-toggler" type="button" data-nav-umschalten="hauptmenue">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="nav">
+    <div class="navbar-menue justify-content-between" id="hauptmenue">
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="/">Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="/leitungen">Leitungen</a></li>
         <li class="nav-item"><a class="nav-link" href="/anfragen">Angebotsanfragen</a></li>
         <li class="nav-item"><a class="nav-link" href="/standorte">Standorte</a></li>
         <li class="nav-item"><a class="nav-link" href="/provider">Provider</a></li>
+        {% if benutzer and benutzer.darf_verwalten %}
+        <li class="nav-item"><a class="nav-link" href="/verwaltung/mandanten">Mandanten</a></li>
+        <li class="nav-item"><a class="nav-link" href="/verwaltung/benutzer">Benutzer</a></li>
+        <li class="nav-item"><a class="nav-link" href="/verwaltung/audit">Protokoll</a></li>
+        {% endif %}
       </ul>
-      <a class="btn btn-sm btn-outline-light" href="/docs">API</a>
+      {% if benutzer %}
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-light small text-end">
+          {{ benutzer.name }} &middot; {{ benutzer.rolle }}<br>
+          <span class="text-info">{{ benutzer.mandant }}</span>
+        </span>
+        <a class="btn btn-sm btn-outline-light" href="/passwort">Passwort</a>
+        <form method="post" action="/abmelden" class="m-0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-sm btn-outline-warning">Abmelden</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </div>
 </nav>
+
 <main class="container-fluid pb-5">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">{% block ueberschrift %}{% endblock %}</h1>
-    <div>{% block aktionen %}{% endblock %}</div>
+    <div class="d-flex gap-2">{% block aktionen %}{% endblock %}</div>
   </div>
   {% block inhalt %}{% endblock %}
 </main>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

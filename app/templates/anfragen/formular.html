@@ -4,32 +4,41 @@
 
 {% block inhalt %}
 <form method="post" action="/anfragen/speichern" class="card shadow-sm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <input type="hidden" name="anfrage_id" value="{{ a.id if a else '' }}">
   <div class="card-body row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Titel *</label>
-      <input class="form-control" name="titel" required value="{{ a.titel if a else '' }}"
-             placeholder="z.B. WAN-Anbindung Werk Nord 2026">
-    </div>
     <div class="col-md-3">
-      <label class="form-label">Art</label>
-      <select class="form-select" name="art">
+      <label class="form-label" for="mandant">Mandant *</label>
+      <select class="form-select" id="mandant" name="mandant_id" required>
+        {% for m in mandanten %}
+        <option value="{{ m.id }}" {{ 'selected' if a and a.mandant_id == m.id }}>{{ m.anzeigename }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="titel">Titel *</label>
+      <input class="form-control" id="titel" name="titel" required maxlength="160"
+             value="{{ a.titel if a else '' }}" placeholder="z.B. WAN-Anbindung Rathaus 2027">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label" for="art">Art</label>
+      <select class="form-select" id="art" name="art">
         {% for art in Leitungsart %}
         <option value="{{ art.value }}" {{ 'selected' if a and a.art == art }}>{{ art.value }}</option>
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Status</label>
-      <select class="form-select" name="status">
+    <div class="col-md-2">
+      <label class="form-label" for="status">Status</label>
+      <select class="form-select" id="status" name="status">
         {% for s in AnfrageStatus %}
         <option value="{{ s.value }}" {{ 'selected' if a and a.status == s }}>{{ s.value }}</option>
         {% endfor %}
       </select>
     </div>
     <div class="col-md-6">
-      <label class="form-label">Standort A</label>
-      <select class="form-select" name="standort_a_id">
+      <label class="form-label" for="sa">Standort A</label>
+      <select class="form-select" id="sa" name="standort_a_id">
         <option value="">-</option>
         {% for s in standorte %}
         <option value="{{ s.id }}" {{ 'selected' if a and a.standort_a_id == s.id }}>{{ s.name }}</option>
@@ -37,8 +46,8 @@
       </select>
     </div>
     <div class="col-md-6">
-      <label class="form-label">Standort B</label>
-      <select class="form-select" name="standort_b_id">
+      <label class="form-label" for="sb">Standort B</label>
+      <select class="form-select" id="sb" name="standort_b_id">
         <option value="">-</option>
         {% for s in standorte %}
         <option value="{{ s.id }}" {{ 'selected' if a and a.standort_b_id == s.id }}>{{ s.name }}</option>
@@ -46,8 +55,8 @@
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Wunsch-Technologie</label>
-      <select class="form-select" name="wunsch_technologie">
+      <label class="form-label" for="tech">Wunsch-Technologie</label>
+      <select class="form-select" id="tech" name="wunsch_technologie">
         <option value="">-</option>
         {% for t in Technologie %}
         <option value="{{ t.value }}" {{ 'selected' if a and a.wunsch_technologie == t }}>{{ t.value }}</option>
@@ -55,48 +64,56 @@
       </select>
     </div>
     <div class="col-md-2">
-      <label class="form-label">Down (Mbit/s)</label>
-      <input class="form-control" type="number" min="0" name="wunsch_down_mbit" value="{{ a.wunsch_down_mbit if a and a.wunsch_down_mbit is not none else '' }}">
+      <label class="form-label" for="down">Down (Mbit/s)</label>
+      <input class="form-control" id="down" type="number" min="0" name="wunsch_down_mbit"
+             value="{{ a.wunsch_down_mbit if a and a.wunsch_down_mbit is not none else '' }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label">Up (Mbit/s)</label>
-      <input class="form-control" type="number" min="0" name="wunsch_up_mbit" value="{{ a.wunsch_up_mbit if a and a.wunsch_up_mbit is not none else '' }}">
+      <label class="form-label" for="up">Up (Mbit/s)</label>
+      <input class="form-control" id="up" type="number" min="0" name="wunsch_up_mbit"
+             value="{{ a.wunsch_up_mbit if a and a.wunsch_up_mbit is not none else '' }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label">Sprachkanaele</label>
-      <input class="form-control" type="number" min="0" name="wunsch_sprachkanaele" value="{{ a.wunsch_sprachkanaele if a and a.wunsch_sprachkanaele is not none else '' }}">
+      <label class="form-label" for="kanaele">Sprachkanaele</label>
+      <input class="form-control" id="kanaele" type="number" min="0" name="wunsch_sprachkanaele"
+             value="{{ a.wunsch_sprachkanaele if a and a.wunsch_sprachkanaele is not none else '' }}">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Laufzeit (Monate)</label>
-      <input class="form-control" type="number" min="0" name="wunsch_laufzeit_monate" value="{{ a.wunsch_laufzeit_monate if a and a.wunsch_laufzeit_monate is not none else '' }}">
+      <label class="form-label" for="laufzeit">Laufzeit (Monate)</label>
+      <input class="form-control" id="laufzeit" type="number" min="0" name="wunsch_laufzeit_monate"
+             value="{{ a.wunsch_laufzeit_monate if a and a.wunsch_laufzeit_monate is not none else '' }}">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Wunschtermin Bereitstellung</label>
-      <input class="form-control" type="date" name="wunsch_termin" value="{{ a.wunsch_termin if a and a.wunsch_termin else '' }}">
+      <label class="form-label" for="termin">Wunschtermin Bereitstellung</label>
+      <input class="form-control" id="termin" type="date" name="wunsch_termin"
+             value="{{ a.wunsch_termin if a and a.wunsch_termin else '' }}">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Abgabefrist Angebot</label>
-      <input class="form-control" type="date" name="abgabefrist" value="{{ a.abgabefrist if a and a.abgabefrist else '' }}">
+      <label class="form-label" for="frist">Abgabefrist Angebot</label>
+      <input class="form-control" id="frist" type="date" name="abgabefrist"
+             value="{{ a.abgabefrist if a and a.abgabefrist else '' }}">
     </div>
     <div class="col-12">
-      <label class="form-label">Anforderungen (fliessen in das Anschreiben ein)</label>
-      <textarea class="form-control" name="anforderungen" rows="4">{{ a.anforderungen or '' if a else '' }}</textarea>
+      <label class="form-label" for="anforderungen">Anforderungen (fliessen in das Anschreiben ein)</label>
+      <textarea class="form-control" id="anforderungen" name="anforderungen" rows="4">{{ a.anforderungen or '' if a else '' }}</textarea>
     </div>
     <div class="col-12">
-      <label class="form-label">Interne Notizen</label>
-      <textarea class="form-control" name="notizen" rows="3">{{ a.notizen or '' if a else '' }}</textarea>
+      <label class="form-label" for="notizen">Interne Notizen</label>
+      <textarea class="form-control" id="notizen" name="notizen" rows="3">{{ a.notizen or '' if a else '' }}</textarea>
     </div>
   </div>
   <div class="card-footer d-flex gap-2">
     <button class="btn btn-primary">Speichern</button>
     <a class="btn btn-outline-secondary" href="{{ '/anfragen/' ~ a.id if a else '/anfragen' }}">Abbrechen</a>
     {% if a %}
-    <button class="btn btn-outline-danger ms-auto" form="anfrage-loeschen"
-            onclick="return confirm('Anfrage inklusive Angebote loeschen?');">Loeschen</button>
+    <button class="btn btn-outline-danger ms-auto" form="anfrage-loeschen">Loeschen</button>
     {% endif %}
   </div>
 </form>
 {% if a %}
-<form id="anfrage-loeschen" method="post" action="/anfragen/{{ a.id }}/loeschen"></form>
+<form id="anfrage-loeschen" method="post" action="/anfragen/{{ a.id }}/loeschen"
+      data-bestaetigen="Anfrage inklusive aller Angebote loeschen?">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+</form>
 {% endif %}
 {% endblock %}

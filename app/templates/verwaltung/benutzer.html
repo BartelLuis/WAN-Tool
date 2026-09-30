@@ -1,0 +1,113 @@
+{% extends "basis.html" %}
+{% block ueberschrift %}Benutzerkonten{% endblock %}
+
+{% block inhalt %}
+{% if startpasswort %}
+<div class="alert alert-warning">
+  <strong>Einmaliges Startpasswort fuer {{ startpasswort.konto }}:</strong>
+  <code>{{ startpasswort.passwort }}</code><br>
+  <span class="small">
+    Nur jetzt sichtbar. Auf einem sicheren Weg uebermitteln; die Person muss es
+    bei der ersten Anmeldung aendern.
+  </span>
+</div>
+{% endif %}
+
+<div class="card shadow-sm mb-4">
+  <div class="table-responsive">
+    <table class="table table-hover tabelle-kompakt mb-0">
+      <thead>
+        <tr>
+          <th>Benutzername</th><th>Name</th><th>Rolle</th><th>Mandant</th>
+          <th>Untergeordnete</th><th>Status</th><th>Letzte Anmeldung</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for k in konten %}
+        <tr>
+          <td><code>{{ k.benutzername }}</code></td>
+          <td>{{ k.name }}</td>
+          <td>{{ k.rolle.value }}</td>
+          <td>{{ k.mandant.anzeigename }}</td>
+          <td>{{ "ja" if k.sieht_untergeordnete else "nein" }}</td>
+          <td>
+            {% if not k.aktiv %}<span class="badge text-bg-dark">gesperrt</span>
+            {% elif k.passwort_aendern %}<span class="badge text-bg-warning">Wechsel faellig</span>
+            {% else %}<span class="badge text-bg-success">aktiv</span>{% endif %}
+          </td>
+          <td>{{ k.letzter_login | zeitpunkt }}</td>
+          <td class="text-end">
+            <form method="post" action="/verwaltung/benutzer/{{ k.id }}/passwort-zuruecksetzen"
+                  data-bestaetigen="Passwort von {{ k.benutzername }} zuruecksetzen?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm btn-outline-secondary">Passwort zuruecksetzen</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="text-muted">Keine Konten vorhanden.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">Konto anlegen oder aendern</div>
+  <form method="post" action="/verwaltung/benutzer/speichern" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="card-body row g-3">
+      <div class="col-md-2">
+        <label class="form-label" for="b-id">ID (leer = neu)</label>
+        <input class="form-control" id="b-id" name="benutzer_id" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="b-benutzername">Benutzername</label>
+        <input class="form-control" id="b-benutzername" name="benutzername" required maxlength="80">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="b-name">Name</label>
+        <input class="form-control" id="b-name" name="name" required maxlength="160">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="b-email">E-Mail</label>
+        <input class="form-control" id="b-email" name="email" type="email" maxlength="200">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="b-rolle">Rolle</label>
+        <select class="form-select" id="b-rolle" name="rolle">
+          {% for r in Rolle %}
+          {% if r.value != "Administrator" or (benutzer and benutzer.ist_admin) %}
+          <option value="{{ r.value }}">{{ r.value }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="b-mandant">Mandant</label>
+        <select class="form-select" id="b-mandant" name="mandant_id" required>
+          {% for m in mandanten %}
+          <option value="{{ m.id }}">{{ m.anzeigename }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5 d-flex align-items-end gap-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="b-unter" name="sieht_untergeordnete" value="1">
+          <label class="form-check-label" for="b-unter">untergeordnete Mandanten sehen</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="b-aktiv" name="aktiv" value="1" checked>
+          <label class="form-check-label" for="b-aktiv">aktiv</label>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-primary">Speichern</button>
+      <span class="text-muted small ms-2">
+        Neue Konten erhalten ein einmaliges Startpasswort, das direkt danach angezeigt wird.
+      </span>
+    </div>
+  </form>
+</div>
+{% endblock %}

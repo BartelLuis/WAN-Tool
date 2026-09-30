@@ -1,45 +1,61 @@
 {% extends "basis.html" %}
-{% block ueberschrift %}{{ "Standort bearbeiten" if standort else "Neuer Standort" }}{% endblock %}
+{% set s = standort %}
+{% block ueberschrift %}{{ "Standort bearbeiten" if s else "Neuer Standort" }}{% endblock %}
 
 {% block inhalt %}
 <form method="post" action="/standorte/speichern" class="card shadow-sm">
-  <input type="hidden" name="standort_id" value="{{ standort.id if standort else '' }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="standort_id" value="{{ s.id if s else '' }}">
   <div class="card-body row g-3">
-    <div class="col-md-8">
-      <label class="form-label">Name *</label>
-      <input class="form-control" name="name" required value="{{ standort.name if standort else '' }}">
-    </div>
     <div class="col-md-4">
-      <label class="form-label">Kurzzeichen</label>
-      <input class="form-control" name="kurzzeichen" value="{{ standort.kurzzeichen or '' if standort else '' }}">
+      <label class="form-label" for="mandant">Mandant *</label>
+      <select class="form-select" id="mandant" name="mandant_id" required>
+        {% for m in mandanten %}
+        <option value="{{ m.id }}" {{ 'selected' if s and s.mandant_id == m.id }}>{{ m.anzeigename }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="name">Name *</label>
+      <input class="form-control" id="name" name="name" required maxlength="120"
+             value="{{ s.name if s else '' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="kurz">Kurzzeichen</label>
+      <input class="form-control" id="kurz" name="kurzzeichen" maxlength="20"
+             value="{{ s.kurzzeichen or '' if s else '' }}">
     </div>
     <div class="col-md-6">
-      <label class="form-label">Strasse / Nr.</label>
-      <input class="form-control" name="strasse" value="{{ standort.strasse or '' if standort else '' }}">
+      <label class="form-label" for="strasse">Strasse / Nr.</label>
+      <input class="form-control" id="strasse" name="strasse" maxlength="160"
+             value="{{ s.strasse or '' if s else '' }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label">PLZ</label>
-      <input class="form-control" name="plz" value="{{ standort.plz or '' if standort else '' }}">
+      <label class="form-label" for="plz">PLZ</label>
+      <input class="form-control" id="plz" name="plz" maxlength="10" value="{{ s.plz or '' if s else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Ort</label>
-      <input class="form-control" name="ort" value="{{ standort.ort or '' if standort else '' }}">
+      <label class="form-label" for="ort">Ort</label>
+      <input class="form-control" id="ort" name="ort" maxlength="120" value="{{ s.ort or '' if s else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Land</label>
-      <input class="form-control" name="land" value="{{ standort.land if standort else 'Deutschland' }}">
+      <label class="form-label" for="land">Land</label>
+      <input class="form-control" id="land" name="land" maxlength="60"
+             value="{{ s.land if s else 'Deutschland' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Ansprechpartner</label>
-      <input class="form-control" name="ansprechpartner" value="{{ standort.ansprechpartner or '' if standort else '' }}">
+      <label class="form-label" for="ap">Ansprechpartner</label>
+      <input class="form-control" id="ap" name="ansprechpartner" maxlength="120"
+             value="{{ s.ansprechpartner or '' if s else '' }}">
     </div>
     <div class="col-md-4">
-      <label class="form-label">Telefon</label>
-      <input class="form-control" name="telefon" value="{{ standort.telefon or '' if standort else '' }}">
+      <label class="form-label" for="tel">Telefon</label>
+      <input class="form-control" id="tel" name="telefon" maxlength="60"
+             value="{{ s.telefon or '' if s else '' }}">
     </div>
     <div class="col-12">
-      <label class="form-label">Notizen</label>
-      <textarea class="form-control" name="notizen" rows="3">{{ standort.notizen or '' if standort else '' }}</textarea>
+      <label class="form-label" for="notizen">Notizen</label>
+      <textarea class="form-control" id="notizen" name="notizen" rows="3">{{ s.notizen or '' if s else '' }}</textarea>
     </div>
   </div>
   <div class="card-footer d-flex gap-2">

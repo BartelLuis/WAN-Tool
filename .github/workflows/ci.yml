@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Format und Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Ruff (Regeln)
+        run: ruff check --output-format=github .
+      - name: Ruff (Formatierung)
+        run: ruff format --check .
+
+  test:
+    name: Tests (${{ matrix.datenbank }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - datenbank: sqlite
+            url: ""
+          - datenbank: mysql
+            url: mysql+pymysql://wantool:testpasswort@127.0.0.1:3306/wantool?charset=utf8mb4
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpasswort
+          MYSQL_DATABASE: wantool
+          MYSQL_USER: wantool
+          MYSQL_PASSWORD: testpasswort
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -prootpasswort"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Pytest
+        env:
+          TEST_DATABASE_URL: ${{ matrix.url }}
+        run: pytest -v
+
+  sicherheit:
+    name: Abhaengigkeiten und Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Bandit (statische Analyse)
+        run: bandit -r app -ll
+      - name: pip-audit (bekannte Schwachstellen)
+        run: pip-audit --requirement requirements.txt --strict
+
+  container:
+    name: Container bauen und pruefen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Fremd-Assets pruefen
+        run: |
+          cd app/static/vendor
+          sha256sum --check SHA256SUMS
+
+      - name: Image bauen
+        run: docker build -t wan-tool:${{ github.sha }} .
+
+      - name: Als Nicht-Root pruefen
+        run: |
+          nutzer="$(docker run --rm --entrypoint id wan-tool:${{ github.sha }} -u)"
+          echo "Container laeuft als UID $nutzer"
+          test "$nutzer" != "0"
+
+      - name: Trivy (Image-Schwachstellen)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: wan-tool:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+  integration:
+    name: Compose-Start unter Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Testkonfiguration erzeugen
+        run: |
+          mkdir -p secrets
+          openssl rand -base64 24 > secrets/mysql_root_password
+          openssl rand -base64 24 > secrets/mysql_password
+          {
+            echo "MYSQL_PASSWORD=$(cat secrets/mysql_password)"
+            echo "SESSION_SECRET=$(openssl rand -base64 48)"
+            echo "ADMIN_PASSWORT=$(openssl rand -base64 18)Aa1!"
+            echo "COOKIE_SECURE=false"
+            echo "UMGEBUNG=produktion"
+          } > .env
+
+      - name: Stack starten
+        run: docker compose up -d --build --wait --wait-timeout 240
+
+      - name: Erreichbarkeit pruefen
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:8000/health
+          status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/login)"
+          test "$status" = "200"
+          kopf="$(curl -sI http://127.0.0.1:8000/login)"
+          echo "$kopf" | grep -qi 'content-security-policy'
+          echo "$kopf" | grep -qi 'x-frame-options: DENY'
+          umleitung="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/leitungen)"
+          test "$umleitung" = "303"
+
+      - name: Protokolle bei Fehler
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Aufraeumen
+        if: always()
+        run: docker compose down -v
